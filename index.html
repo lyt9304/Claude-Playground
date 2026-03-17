@@ -299,16 +299,13 @@
   </div>
 
   <script>
-    const API_KEY = 'DEMO'; // Replace with your OpenWeatherMap API key
-    const BASE_URL = 'https://api.openweathermap.org/data/2.5';
-
     let currentData = null;
     let unit = 'metric'; // 'metric' = Celsius, 'imperial' = Fahrenheit
 
     const cityInput = document.getElementById('city-input');
     const searchBtn = document.getElementById('search-btn');
     const errorMsg = document.getElementById('error-msg');
-    const loading = document.getElementById('loading');
+
     const weatherCard = document.getElementById('weather-card');
     const forecast = document.getElementById('forecast');
 
@@ -400,38 +397,9 @@
       forecast.classList.add('visible');
     }
 
-    async function fetchWeather(city) {
+    function fetchWeather(city) {
       errorMsg.textContent = '';
-      loading.classList.add('visible');
-      weatherCard.classList.remove('visible');
-      forecast.classList.remove('visible');
-
-      try {
-        const [weatherRes, forecastRes] = await Promise.all([
-          fetch(`${BASE_URL}/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`),
-          fetch(`${BASE_URL}/forecast?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`)
-        ]);
-
-        if (!weatherRes.ok) {
-          const err = await weatherRes.json();
-          throw new Error(err.message || 'City not found');
-        }
-
-        const weatherData = await weatherRes.json();
-        const forecastData = await forecastRes.json();
-
-        displayWeather(weatherData);
-        displayForecast(forecastData);
-      } catch (err) {
-        if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
-          // Show demo data when API is not configured
-          showDemoData(city);
-        } else {
-          errorMsg.textContent = `Error: ${err.message}`;
-        }
-      } finally {
-        loading.classList.remove('visible');
-      }
+      showDemoData(city);
     }
 
     function showDemoData(city) {
@@ -465,7 +433,7 @@
 
       displayWeather(demoWeather);
       displayForecast(demoForecast);
-      errorMsg.textContent = 'Demo mode — add an OpenWeatherMap API key to fetch live data.';
+      errorMsg.textContent = '';
     }
 
     searchBtn.addEventListener('click', () => {
