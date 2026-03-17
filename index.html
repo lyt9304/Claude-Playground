@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather Report</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .search-bar input {
+      flex: 1;
+      padding: 0.75rem 1.25rem;
+      border: none;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      backdrop-filter: blur(10px);
+      transition: background 0.3s;
+    }
+
+    .search-bar input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .search-bar input:focus {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .search-bar button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 50px;
+      background: #e94560;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.1s;
+    }
+
+    .search-bar button:hover {
+      background: #c73652;
+    }
+
+    .search-bar button:active {
+      transform: scale(0.96);
+    }
+
+    .error-msg {
+      color: #ff6b6b;
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+      min-height: 1.2em;
+    }
+
+    .weather-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 480px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .weather-card.visible {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .location {
+      font-size: 1.6rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .date {
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+
+    .weather-icon {
+      font-size: 6rem;
+      line-height: 1;
+    }
+
+    .temperature {
+      font-size: 4rem;
+      font-weight: 200;
+      letter-spacing: 2px;
+    }
+
+    .description {
+      font-size: 1.1rem;
+      text-transform: capitalize;
+      opacity: 0.85;
+    }
+
+    .details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      width: 100%;
+      margin-top: 1rem;
+    }
+
+    .detail-item {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .detail-item .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.6;
+      margin-bottom: 0.4rem;
+    }
+
+    .detail-item .value {
+      font-size: 1.3rem;
+      font-weight: 500;
+    }
+
+    .unit-toggle {
+      margin-top: 1rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .unit-toggle button {
+      padding: 0.4rem 1rem;
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 50px;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .unit-toggle button.active {
+      background: rgba(255,255,255,0.25);
+      border-color: #fff;
+    }
+
+    .loading {
+      display: none;
+      font-size: 1rem;
+      opacity: 0.7;
+      margin-bottom: 1rem;
+    }
+
+    .loading.visible {
+      display: block;
+    }
+
+    .forecast {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 1.5rem;
+      display: none;
+    }
+
+    .forecast.visible {
+      display: block;
+    }
+
+    .forecast h2 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.6;
+      margin-bottom: 0.75rem;
+    }
+
+    .forecast-grid {
+      display: flex;
+      gap: 0.75rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .forecast-day {
+      background: rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 0.75rem 1rem;
+      text-align: center;
+      flex: 0 0 auto;
+      min-width: 72px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .forecast-day .day-name {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      margin-bottom: 0.4rem;
+    }
+
+    .forecast-day .day-icon {
+      font-size: 1.6rem;
+    }
+
+    .forecast-day .day-temp {
+      font-size: 0.95rem;
+      margin-top: 0.4rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <h1>Weather</h1>
+
+  <div class="search-bar">
+    <input type="text" id="city-input" placeholder="Enter city name..." />
+    <button id="search-btn">Search</button>
+  </div>
+
+  <p class="error-msg" id="error-msg"></p>
+  <p class="loading" id="loading">Fetching weather...</p>
+
+  <div class="weather-card" id="weather-card">
+    <div class="location" id="location"></div>
+    <div class="date" id="date"></div>
+    <div class="weather-icon" id="weather-icon"></div>
+    <div class="temperature" id="temperature"></div>
+    <div class="description" id="description"></div>
+    <div class="details">
+      <div class="detail-item">
+        <div class="label">Humidity</div>
+        <div class="value" id="humidity"></div>
+      </div>
+      <div class="detail-item">
+        <div class="label">Wind</div>
+        <div class="value" id="wind"></div>
+      </div>
+      <div class="detail-item">
+        <div class="label">Feels Like</div>
+        <div class="value" id="feels-like"></div>
+      </div>
+      <div class="detail-item">
+        <div class="label">Pressure</div>
+        <div class="value" id="pressure"></div>
+      </div>
+    </div>
+    <div class="unit-toggle">
+      <button id="btn-c" class="active">°C</button>
+      <button id="btn-f">°F</button>
+    </div>
+  </div>
+
+  <div class="forecast" id="forecast">
+    <h2>5-Day Forecast</h2>
+    <div class="forecast-grid" id="forecast-grid"></div>
+  </div>
+
+  <script>
+    const API_KEY = 'DEMO'; // Replace with your OpenWeatherMap API key
+    const BASE_URL = 'https://api.openweathermap.org/data/2.5';
+
+    let currentData = null;
+    let unit = 'metric'; // 'metric' = Celsius, 'imperial' = Fahrenheit
+
+    const cityInput = document.getElementById('city-input');
+    const searchBtn = document.getElementById('search-btn');
+    const errorMsg = document.getElementById('error-msg');
+    const loading = document.getElementById('loading');
+    const weatherCard = document.getElementById('weather-card');
+    const forecast = document.getElementById('forecast');
+
+    const weatherIcons = {
+      Thunderstorm: '⛈️',
+      Drizzle: '🌦️',
+      Rain: '🌧️',
+      Snow: '❄️',
+      Mist: '🌫️',
+      Smoke: '🌫️',
+      Haze: '🌫️',
+      Dust: '🌫️',
+      Fog: '🌫️',
+      Sand: '🌫️',
+      Ash: '🌫️',
+      Squall: '💨',
+      Tornado: '🌪️',
+      Clear: '☀️',
+      Clouds: '☁️',
+    };
+
+    function getIcon(main) {
+      return weatherIcons[main] || '🌡️';
+    }
+
+    function formatDate(ts, timezone) {
+      const d = new Date((ts + timezone) * 1000);
+      return d.toUTCString().replace(' GMT', '').replace(/:\d{2} /, ' ');
+    }
+
+    function celsiusToFahrenheit(c) {
+      return (c * 9 / 5 + 32).toFixed(1);
+    }
+
+    function displayWeather(data) {
+      currentData = data;
+      const isC = unit === 'metric';
+      const temp = isC ? data.main.temp.toFixed(1) : celsiusToFahrenheit(data.main.temp);
+      const feelsLike = isC ? data.main.feels_like.toFixed(1) : celsiusToFahrenheit(data.main.feels_like);
+      const unitLabel = isC ? '°C' : '°F';
+      const windUnit = isC ? 'm/s' : 'mph';
+      const windSpeed = isC ? data.wind.speed.toFixed(1) : (data.wind.speed * 2.237).toFixed(1);
+
+      document.getElementById('location').textContent = `${data.name}, ${data.sys.country}`;
+      document.getElementById('date').textContent = formatDate(data.dt, data.timezone);
+      document.getElementById('weather-icon').textContent = getIcon(data.weather[0].main);
+      document.getElementById('temperature').textContent = `${temp}${unitLabel}`;
+      document.getElementById('description').textContent = data.weather[0].description;
+      document.getElementById('humidity').textContent = `${data.main.humidity}%`;
+      document.getElementById('wind').textContent = `${windSpeed} ${windUnit}`;
+      document.getElementById('feels-like').textContent = `${feelsLike}${unitLabel}`;
+      document.getElementById('pressure').textContent = `${data.main.pressure} hPa`;
+
+      weatherCard.classList.add('visible');
+    }
+
+    function displayForecast(forecastData) {
+      const grid = document.getElementById('forecast-grid');
+      grid.innerHTML = '';
+
+      // Get one entry per day (noon snapshot)
+      const days = {};
+      forecastData.list.forEach(item => {
+        const d = new Date(item.dt * 1000);
+        const dateKey = d.toISOString().split('T')[0];
+        const hour = d.getUTCHours();
+        if (!days[dateKey] || Math.abs(hour - 12) < Math.abs(new Date(days[dateKey].dt * 1000).getUTCHours() - 12)) {
+          days[dateKey] = item;
+        }
+      });
+
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      Object.values(days).slice(0, 5).forEach(item => {
+        const d = new Date(item.dt * 1000);
+        const isC = unit === 'metric';
+        const temp = isC ? item.main.temp.toFixed(0) : celsiusToFahrenheit(item.main.temp);
+        const unitLabel = isC ? '°C' : '°F';
+
+        const el = document.createElement('div');
+        el.className = 'forecast-day';
+        el.innerHTML = `
+          <div class="day-name">${dayNames[d.getDay()]}</div>
+          <div class="day-icon">${getIcon(item.weather[0].main)}</div>
+          <div class="day-temp">${temp}${unitLabel}</div>
+        `;
+        grid.appendChild(el);
+      });
+
+      forecast.classList.add('visible');
+    }
+
+    async function fetchWeather(city) {
+      errorMsg.textContent = '';
+      loading.classList.add('visible');
+      weatherCard.classList.remove('visible');
+      forecast.classList.remove('visible');
+
+      try {
+        const [weatherRes, forecastRes] = await Promise.all([
+          fetch(`${BASE_URL}/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`),
+          fetch(`${BASE_URL}/forecast?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`)
+        ]);
+
+        if (!weatherRes.ok) {
+          const err = await weatherRes.json();
+          throw new Error(err.message || 'City not found');
+        }
+
+        const weatherData = await weatherRes.json();
+        const forecastData = await forecastRes.json();
+
+        displayWeather(weatherData);
+        displayForecast(forecastData);
+      } catch (err) {
+        if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+          // Show demo data when API is not configured
+          showDemoData(city);
+        } else {
+          errorMsg.textContent = `Error: ${err.message}`;
+        }
+      } finally {
+        loading.classList.remove('visible');
+      }
+    }
+
+    function showDemoData(city) {
+      const demoWeather = {
+        name: city || 'San Francisco',
+        sys: { country: 'US' },
+        dt: Math.floor(Date.now() / 1000),
+        timezone: -25200,
+        main: {
+          temp: 18.5,
+          feels_like: 17.2,
+          humidity: 72,
+          pressure: 1015,
+        },
+        wind: { speed: 4.2 },
+        weather: [{ main: 'Clouds', description: 'partly cloudy' }],
+      };
+
+      const demoForecast = {
+        list: [0, 1, 2, 3, 4].map(i => ({
+          dt: Math.floor(Date.now() / 1000) + i * 86400,
+          main: {
+            temp: [18.5, 21.0, 15.3, 13.8, 20.1][i],
+            feels_like: 17,
+            humidity: 70,
+            pressure: 1013,
+          },
+          weather: [{ main: ['Clouds', 'Clear', 'Rain', 'Drizzle', 'Clear'][i], description: 'demo' }],
+        })),
+      };
+
+      displayWeather(demoWeather);
+      displayForecast(demoForecast);
+      errorMsg.textContent = 'Demo mode — add an OpenWeatherMap API key to fetch live data.';
+    }
+
+    searchBtn.addEventListener('click', () => {
+      const city = cityInput.value.trim();
+      if (city) fetchWeather(city);
+    });
+
+    cityInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const city = cityInput.value.trim();
+        if (city) fetchWeather(city);
+      }
+    });
+
+    document.getElementById('btn-c').addEventListener('click', () => {
+      if (unit !== 'metric') {
+        unit = 'metric';
+        document.getElementById('btn-c').classList.add('active');
+        document.getElementById('btn-f').classList.remove('active');
+        if (currentData) {
+          displayWeather(currentData);
+          // Re-fetch forecast for unit update
+          const city = currentData.name;
+          fetchWeather(city);
+        }
+      }
+    });
+
+    document.getElementById('btn-f').addEventListener('click', () => {
+      if (unit !== 'imperial') {
+        unit = 'imperial';
+        document.getElementById('btn-f').classList.add('active');
+        document.getElementById('btn-c').classList.remove('active');
+        if (currentData) {
+          displayWeather(currentData);
+          const city = currentData.name;
+          fetchWeather(city);
+        }
+      }
+    });
+
+    // Load demo on start
+    showDemoData('San Francisco');
+  </script>
+</body>
+</html>
